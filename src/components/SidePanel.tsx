@@ -17,13 +17,9 @@ export function SidePanel() {
 
   useEffect(() => {
     // Get current background info
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'getBackgroundInfo' }, (response) => {
-          if (response) {
-            setBackgroundInfo(response)
-          }
-        })
+    chrome.runtime.sendMessage({ action: 'getBackgroundInfo' }, (response) => {
+      if (response && response.success !== false) {
+        setBackgroundInfo(response)
       }
     })
   }, [])
@@ -58,25 +54,25 @@ export function SidePanel() {
   const applyBackground = () => {
     if (!generatedImage) return
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          action: 'changeBackground',
-          imageUrl: generatedImage
-        }, () => {
-          setBackgroundInfo(prev => ({ ...prev, currentImage: generatedImage, hasOriginal: true }))
-          setGeneratedImage(null)
-        })
+    chrome.runtime.sendMessage({
+      action: 'changeBackground',
+      imageUrl: generatedImage
+    }, (response) => {
+      if (response && response.success !== false) {
+        setBackgroundInfo(prev => ({ ...prev, currentImage: generatedImage, hasOriginal: true }))
+        setGeneratedImage(null)
+      } else {
+        setError(response?.error || 'Failed to apply background')
       }
     })
   }
 
   const restoreBackground = () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'restoreBackground' }, () => {
-          setBackgroundInfo(prev => ({ ...prev, currentImage: null }))
-        })
+    chrome.runtime.sendMessage({ action: 'restoreBackground' }, (response) => {
+      if (response && response.success !== false) {
+        setBackgroundInfo(prev => ({ ...prev, currentImage: null }))
+      } else {
+        setError(response?.error || 'Failed to restore background')
       }
     })
   }
