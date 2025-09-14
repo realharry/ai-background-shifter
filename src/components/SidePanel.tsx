@@ -83,17 +83,17 @@ export function SidePanel() {
   }
 
   return (
-    <div className="w-80 h-screen bg-white p-4 flex flex-col">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-800 mb-2">AI Background Shifter</h1>
-        <p className="text-sm text-gray-600">
+    <div style={{ width: '320px', height: '100vh', backgroundColor: 'white', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>AI Background Shifter</h1>
+        <p style={{ fontSize: '14px', color: '#6b7280' }}>
           Generate AI backgrounds for this webpage
         </p>
       </div>
 
-      <div className="flex-1 space-y-4">
+      <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
-          <label htmlFor="prompt" className="block text-sm font-medium text-gray-800 mb-2">
+          <label htmlFor="prompt" style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#1f2937', marginBottom: '8px' }}>
             Describe your background
           </label>
           <Textarea
@@ -101,14 +101,14 @@ export function SidePanel() {
             placeholder="e.g., A serene mountain landscape at sunset with purple clouds..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="min-h-[100px]"
+            style={{ minHeight: '100px' }}
           />
         </div>
 
         <Button 
           onClick={generateImage} 
           disabled={isGenerating || !prompt.trim()}
-          className="w-full"
+          style={{ width: '100%' }}
         >
           {isGenerating ? (
             <>
@@ -121,26 +121,26 @@ export function SidePanel() {
         </Button>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
+          <div style={{ padding: '12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px' }}>
+            <p style={{ fontSize: '14px', color: '#dc2626' }}>{error}</p>
           </div>
         )}
 
         {generatedImage && (
-          <div className="space-y-3">
-            <div className="relative">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ position: 'relative' }}>
               <img
                 src={generatedImage}
                 alt="Generated background"
-                className="w-full h-32 object-cover rounded-md border"
+                style={{ width: '100%', height: '128px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #d1d5db' }}
               />
             </div>
-            <div className="flex gap-2">
-              <Button onClick={applyBackground} className="flex-1">
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Button onClick={applyBackground} style={{ flex: '1' }}>
                 <Check className="mr-2 h-4 w-4" />
                 Apply
               </Button>
-              <Button onClick={retryGeneration} variant="outline" className="flex-1">
+              <Button onClick={retryGeneration} variant="outline" style={{ flex: '1' }}>
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Retry
               </Button>
@@ -149,9 +149,9 @@ export function SidePanel() {
         )}
 
         {backgroundInfo.currentImage && (
-          <div className="pt-4 border-t">
-            <p className="text-sm text-gray-600 mb-2">Current background applied</p>
-            <Button onClick={restoreBackground} variant="outline" className="w-full">
+          <div style={{ paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Current background applied</p>
+            <Button onClick={restoreBackground} variant="outline" style={{ width: '100%' }}>
               <X className="mr-2 h-4 w-4" />
               Restore Original
             </Button>
@@ -159,10 +159,10 @@ export function SidePanel() {
         )}
       </div>
 
-      <div className="pt-4 border-t mt-auto">
+      <div style={{ paddingTop: '16px', borderTop: '1px solid #e5e7eb', marginTop: 'auto' }}>
         <Button
           variant="ghost"
-          className="w-full text-xs"
+          style={{ width: '100%', fontSize: '12px' }}
           onClick={() => chrome.runtime.openOptionsPage()}
         >
           Settings

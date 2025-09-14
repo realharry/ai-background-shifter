@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       if (tabs[0]?.id) {
         chrome.tabs.sendMessage(tabs[0].id, request, (response) => {
           if (chrome.runtime.lastError) {
-            console.error('Error sending message to content script:', chrome.runtime.lastError);
+            console.error('Error sending message to content script:', chrome.runtime.lastError.message);
             sendResponse({ success: false, error: chrome.runtime.lastError.message });
           } else {
             sendResponse(response);

@@ -50,32 +50,32 @@ export function OptionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto p-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Settings className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-800">AI Background Shifter Settings</h1>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+      <div style={{ maxWidth: '672px', margin: '0 auto', padding: '32px' }}>
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <Settings style={{ height: '32px', width: '32px', color: '#2563eb' }} />
+            <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#1f2937' }}>AI Background Shifter Settings</h1>
           </div>
-          <p className="text-gray-600">
+          <p style={{ color: '#6b7280' }}>
             Configure your AI image generation preferences and API settings.
           </p>
         </div>
 
-        <div className="space-y-6 bg-white p-6 rounded-lg border border-gray-200">
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800">AI Model Settings</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', backgroundColor: 'white', padding: '24px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>AI Model Settings</h2>
             
-            <div className="grid gap-4">
+            <div style={{ display: 'grid', gap: '16px' }}>
               <div>
-                <label htmlFor="aiModel" className="block text-sm font-medium text-gray-800 mb-2">
+                <label htmlFor="aiModel" style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#1f2937', marginBottom: '8px' }}>
                   AI Model
                 </label>
                 <select
                   id="aiModel"
                   value={settings.aiModel}
                   onChange={(e) => updateSetting('aiModel', e.target.value)}
-                  className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  style={{ width: '100%', height: '40px', borderRadius: '6px', border: '1px solid #d1d5db', backgroundColor: 'white', padding: '8px 12px', fontSize: '14px' }}
                 >
                   <option value="dall-e-3">DALL-E 3 (OpenAI)</option>
                   <option value="dall-e-2">DALL-E 2 (OpenAI)</option>
@@ -85,7 +85,7 @@ export function OptionsPage() {
               </div>
 
               <div>
-                <label htmlFor="apiKey" className="block text-sm font-medium text-gray-800 mb-2">
+                <label htmlFor="apiKey" style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#1f2937', marginBottom: '8px' }}>
                   API Key
                 </label>
                 <Input
@@ -95,21 +95,21 @@ export function OptionsPage() {
                   value={settings.apiKey}
                   onChange={(e) => updateSetting('apiKey', e.target.value)}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
                   Your API key is stored locally and never shared.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label htmlFor="imageSize" className="block text-sm font-medium text-gray-800 mb-2">
+                  <label htmlFor="imageSize" style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#1f2937', marginBottom: '8px' }}>
                     Image Size
                   </label>
                   <select
                     id="imageSize"
                     value={settings.imageSize}
                     onChange={(e) => updateSetting('imageSize', e.target.value)}
-                    className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    style={{ width: '100%', height: '40px', borderRadius: '6px', border: '1px solid #d1d5db', backgroundColor: 'white', padding: '8px 12px', fontSize: '14px' }}
                   >
                     <option value="1024x1024">1024x1024 (Square)</option>
                     <option value="1792x1024">1792x1024 (Landscape)</option>
@@ -118,14 +118,14 @@ export function OptionsPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="quality" className="block text-sm font-medium text-gray-800 mb-2">
+                  <label htmlFor="quality" style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#1f2937', marginBottom: '8px' }}>
                     Quality
                   </label>
                   <select
                     id="quality"
                     value={settings.quality}
                     onChange={(e) => updateSetting('quality', e.target.value)}
-                    className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    style={{ width: '100%', height: '40px', borderRadius: '6px', border: '1px solid #d1d5db', backgroundColor: 'white', padding: '8px 12px', fontSize: '14px' }}
                   >
                     <option value="standard">Standard</option>
                     <option value="hd">HD (Higher Quality)</option>
@@ -135,11 +135,11 @@ export function OptionsPage() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-500">
+          <div style={{ paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '14px', color: '#6b7280' }}>
                 {saved && (
-                  <span className="text-green-600">Settings saved successfully!</span>
+                  <span style={{ color: '#16a34a' }}>Settings saved successfully!</span>
                 )}
               </div>
               <Button onClick={saveSettings} disabled={isSaving}>
@@ -159,9 +159,9 @@ export function OptionsPage() {
           </div>
         </div>
 
-        <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-          <h3 className="font-medium text-gray-800 mb-2">How to get API Keys:</h3>
-          <ul className="text-sm text-gray-600 space-y-1">
+        <div style={{ marginTop: '32px', padding: '16px', backgroundColor: '#f3f4f6', borderRadius: '8px' }}>
+          <h3 style={{ fontWeight: '500', color: '#1f2937', marginBottom: '8px' }}>How to get API Keys:</h3>
+          <ul style={{ fontSize: '14px', color: '#6b7280', display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <li>• <strong>OpenAI (DALL-E):</strong> Visit platform.openai.com and create an API key</li>
             <li>• <strong>Stable Diffusion:</strong> Use services like Stability AI or Hugging Face</li>
             <li>• <strong>Other services:</strong> Check their respective documentation</li>
