@@ -69,6 +69,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
 function changePageBackground(imageUrl: string) {
   const body = document.body;
+  const html = document.documentElement;
   
   if (!body) {
     throw new Error('Document body not available');
@@ -76,41 +77,154 @@ function changePageBackground(imageUrl: string) {
   
   // Store original background if not already stored
   if (originalBackground === null) {
-    const computedStyle = window.getComputedStyle(body);
-    originalBackground = computedStyle.background || computedStyle.backgroundColor || '';
+    const bodyStyle = window.getComputedStyle(body);
+    const htmlStyle = window.getComputedStyle(html);
+    originalBackground = JSON.stringify({
+      body: {
+        background: bodyStyle.background || '',
+        backgroundColor: bodyStyle.backgroundColor || '',
+        backgroundImage: bodyStyle.backgroundImage || '',
+        backgroundSize: bodyStyle.backgroundSize || '',
+        backgroundPosition: bodyStyle.backgroundPosition || '',
+        backgroundRepeat: bodyStyle.backgroundRepeat || '',
+        backgroundAttachment: bodyStyle.backgroundAttachment || ''
+      },
+      html: {
+        background: htmlStyle.background || '',
+        backgroundColor: htmlStyle.backgroundColor || '',
+        backgroundImage: htmlStyle.backgroundImage || ''
+      }
+    });
   }
   
-  // Apply new background with better styling
+  // Create or update CSS injection for better control and higher specificity
+  let styleElement = document.getElementById('ai-background-shifter-style') as HTMLStyleElement;
+  if (!styleElement) {
+    styleElement = document.createElement('style');
+    styleElement.id = 'ai-background-shifter-style';
+    document.head.appendChild(styleElement);
+  }
+  
+  // Enhanced CSS with multiple selectors and !important for override capability
+  const css = `
+    /* Target multiple potential main containers with high specificity */
+    html, body, 
+    #root, #app, .app, 
+    main, [role="main"], 
+    .main-content, .content, .page-content,
+    .container, .wrapper, .main-wrapper {
+      background-image: url("${imageUrl}") !important;
+      background-size: cover !important;
+      background-position: center center !important;
+      background-repeat: no-repeat !important;
+      background-attachment: fixed !important;
+    }
+    
+    /* Ensure html and body have full height for proper display */
+    html, body {
+      min-height: 100vh !important;
+      height: auto !important;
+    }
+    
+    /* Target common layout containers */
+    body > div:first-child,
+    body > div:only-child,
+    body > main:first-child {
+      background-image: url("${imageUrl}") !important;
+      background-size: cover !important;
+      background-position: center center !important;
+      background-repeat: no-repeat !important;
+      background-attachment: fixed !important;
+      min-height: 100vh !important;
+    }
+    
+    /* Override potential conflicting styles */
+    * {
+      background-attachment: inherit !important;
+    }
+  `;
+  
+  styleElement.textContent = css;
+  
+  // Also apply directly to body and html as fallback
   body.style.backgroundImage = `url("${imageUrl}")`;
   body.style.backgroundSize = 'cover';
   body.style.backgroundPosition = 'center center';
   body.style.backgroundRepeat = 'no-repeat';
   body.style.backgroundAttachment = 'fixed';
+  body.style.minHeight = '100vh';
+  
+  html.style.backgroundImage = `url("${imageUrl}")`;
+  html.style.backgroundSize = 'cover';
+  html.style.backgroundPosition = 'center center';
+  html.style.backgroundRepeat = 'no-repeat';
+  html.style.backgroundAttachment = 'fixed';
+  html.style.minHeight = '100vh';
   
   currentBackgroundImage = imageUrl;
   
-  console.log('Background changed to:', imageUrl);
+  console.log('Enhanced background changed to:', imageUrl);
+  console.log('Applied to multiple selectors with CSS injection and direct styling');
 }
 
 function restoreOriginalBackground() {
   const body = document.body;
+  const html = document.documentElement;
   
   if (!body) {
     throw new Error('Document body not available');
   }
   
+  // Remove the injected CSS
+  const styleElement = document.getElementById('ai-background-shifter-style');
+  if (styleElement) {
+    styleElement.remove();
+  }
+  
   if (originalBackground !== null) {
-    // Clear all background properties first
-    body.style.backgroundImage = '';
-    body.style.backgroundSize = '';
-    body.style.backgroundPosition = '';
-    body.style.backgroundRepeat = '';
-    body.style.backgroundAttachment = '';
-    
-    // Restore original background
-    body.style.background = originalBackground;
-    currentBackgroundImage = null;
-    console.log('Background restored to original');
+    try {
+      const original = JSON.parse(originalBackground);
+      
+      // Restore body styles
+      const bodyOriginal = original.body || {};
+      body.style.backgroundImage = bodyOriginal.backgroundImage || '';
+      body.style.backgroundSize = bodyOriginal.backgroundSize || '';
+      body.style.backgroundPosition = bodyOriginal.backgroundPosition || '';
+      body.style.backgroundRepeat = bodyOriginal.backgroundRepeat || '';
+      body.style.backgroundAttachment = bodyOriginal.backgroundAttachment || '';
+      body.style.backgroundColor = bodyOriginal.backgroundColor || '';
+      body.style.background = bodyOriginal.background || '';
+      body.style.minHeight = '';
+      
+      // Restore html styles
+      const htmlOriginal = original.html || {};
+      html.style.backgroundImage = htmlOriginal.backgroundImage || '';
+      html.style.backgroundColor = htmlOriginal.backgroundColor || '';
+      html.style.background = htmlOriginal.background || '';
+      html.style.minHeight = '';
+      
+      currentBackgroundImage = null;
+      console.log('Enhanced background restored to original');
+    } catch (error) {
+      console.error('Error restoring background:', error);
+      // Fallback: just clear all background styles
+      body.style.backgroundImage = '';
+      body.style.backgroundSize = '';
+      body.style.backgroundPosition = '';
+      body.style.backgroundRepeat = '';
+      body.style.backgroundAttachment = '';
+      body.style.backgroundColor = '';
+      body.style.background = '';
+      body.style.minHeight = '';
+      
+      html.style.backgroundImage = '';
+      html.style.backgroundColor = '';
+      html.style.background = '';
+      html.style.minHeight = '';
+      
+      currentBackgroundImage = null;
+      console.log('Background cleared (fallback restoration)');
+    }
   } else {
     console.log('No original background to restore');
   }
