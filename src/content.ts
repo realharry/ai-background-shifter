@@ -106,6 +106,7 @@ function changePageBackground(imageUrl: string) {
   }
   
   // Enhanced CSS with background on html/body and transparent children for visibility
+  // This approach targets common layout wrappers that block backgrounds
   const css = `
     /* Set background on html and body elements */
     html {
@@ -128,6 +129,69 @@ function changePageBackground(imageUrl: string) {
       background-image: none !important;
     }
     
+    /* Target common layout wrappers specifically for maximum compatibility */
+    body > div,
+    body > main,
+    body > section,
+    body > article,
+    [class*="wrapper"],
+    [class*="container"],
+    [class*="layout"],
+    [class*="page"],
+    [class*="main"],
+    [class*="content"],
+    [class*="app"],
+    [class*="root"],
+    [id*="wrapper"],
+    [id*="container"],
+    [id*="layout"],
+    [id*="page"],
+    [id*="main"],
+    [id*="content"],
+    [id*="app"],
+    [id*="root"] {
+      background-color: transparent !important;
+      background-image: none !important;
+      background: transparent !important;
+    }
+    
+    /* Target GitHub-specific and common site-specific wrappers with maximum specificity */
+    .application-main,
+    .js-header-wrapper,
+    .Header,
+    .PageLayout,
+    .PageLayout-content,
+    .js-page-layout,
+    #js-pjax-container,
+    .container-xl,
+    .container-lg,
+    .Layout,
+    .Layout-main,
+    .Layout-sidebar,
+    main[role="main"],
+    div[data-pjax-container],
+    .site-wrapper,
+    .page-wrapper,
+    .main-wrapper,
+    .content-wrapper {
+      background-color: transparent !important;
+      background-image: none !important;
+      background: transparent !important;
+    }
+    
+    /* Extra aggressive approach - target divs that are likely full-page wrappers */
+    body > div:first-child,
+    body > div[class]:first-child,
+    body > div[id]:first-child,
+    body > main:first-child,
+    div[style*="height: 100"],
+    div[style*="min-height: 100"],
+    div[class][style*="background"] {
+      background-color: transparent !important;
+      background-image: none !important;
+      background: transparent !important;
+    }
+    
     /* Preserve backgrounds for specific elements that need them for functionality */
     img, video, canvas, iframe, 
     input[type="submit"], input[type="button"], button,
@@ -135,7 +199,9 @@ function changePageBackground(imageUrl: string) {
     select, textarea, input[type="text"], input[type="email"], input[type="password"], input[type="search"],
     .dropdown-menu, .modal, .popup, .tooltip, .alert, .notification,
     pre, code, .code, .highlight,
-    .logo, .icon, [class*="icon"], [class*="logo"] {
+    .logo, .icon, [class*="icon"], [class*="logo"],
+    .avatar, .profile-picture,
+    .card, .panel, .widget {
       background-color: revert !important;
       background-image: revert !important;
     }
@@ -146,12 +212,56 @@ function changePageBackground(imageUrl: string) {
     }
     
     /* Don't apply text shadow to buttons and form elements */
-    button, input, select, textarea, .btn, [role="button"] {
+    button, input, select, textarea, .btn, [role="button"],
+    img, video, canvas, .avatar, .profile-picture,
+    .card, .panel, .widget {
       text-shadow: none !important;
     }
   `;
   
   styleElement.textContent = css;
+  
+  // Dynamic element detection and handling - find elements that might be blocking
+  // Target elements that are likely to be full-page wrappers
+  const findAndProcessWrapperElements = () => {
+    // Look for elements with specific characteristics that suggest they're blocking wrappers
+    const potentialWrappers = Array.from(document.querySelectorAll('div, main, section')).filter(el => {
+      const rect = el.getBoundingClientRect();
+      const computedStyle = window.getComputedStyle(el);
+      
+      // Check if element takes up significant screen space and has a background
+      return (
+        rect.width >= window.innerWidth * 0.8 && // Takes up most of width
+        rect.height >= window.innerHeight * 0.5 && // Takes up significant height
+        (
+          computedStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' && 
+          computedStyle.backgroundColor !== 'transparent' &&
+          computedStyle.backgroundColor !== ''
+        )
+      );
+    });
+    
+    // Make these wrapper elements transparent
+    potentialWrappers.forEach(el => {
+      const htmlEl = el as HTMLElement;
+      htmlEl.style.setProperty('background-color', 'transparent', 'important');
+      htmlEl.style.setProperty('background-image', 'none', 'important');
+      htmlEl.style.setProperty('background', 'transparent', 'important');
+      
+      console.log('Made wrapper element transparent:', htmlEl.className || htmlEl.tagName, htmlEl);
+    });
+    
+    return potentialWrappers.length;
+  };
+  
+  // Apply dynamic processing immediately and after a short delay for late-loading content
+  const wrappersFound = findAndProcessWrapperElements();
+  setTimeout(() => {
+    const laterWrappers = findAndProcessWrapperElements();
+    if (laterWrappers > 0) {
+      console.log(`Found and processed ${laterWrappers} additional wrapper elements after delay`);
+    }
+  }, 500);
   
   // Also apply directly to html as fallback
   html.style.backgroundImage = `url("${imageUrl}")`;
@@ -168,7 +278,8 @@ function changePageBackground(imageUrl: string) {
   currentBackgroundImage = imageUrl;
   
   console.log('Background changed to:', imageUrl);
-  console.log('Applied with transparent child elements approach for maximum visibility');
+  console.log('Applied enhanced transparent child elements approach with dynamic wrapper detection');
+  console.log(`Found and processed ${wrappersFound} wrapper elements initially`);
 }
 
 function restoreOriginalBackground() {
