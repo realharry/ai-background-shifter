@@ -20,33 +20,48 @@ const init = () => {
   }
 };
 
-// Listen for messages from background script
+// Robust message listener with proper error handling
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  // Always acknowledge the message
+  let responseHandled = false;
+  
+  const handleResponse = (response: any) => {
+    if (!responseHandled) {
+      responseHandled = true;
+      sendResponse(response);
+    }
+  };
+
   // Ensure we're ready to operate
   if (!isReady) {
-    sendResponse({ success: false, error: 'Content script not ready' });
-    return;
+    handleResponse({ success: false, error: 'Content script not ready' });
+    return true;
   }
 
   try {
     if (request.action === 'changeBackground') {
+      if (!request.imageUrl) {
+        handleResponse({ success: false, error: 'No image URL provided' });
+        return true;
+      }
+      
       changePageBackground(request.imageUrl);
-      sendResponse({ success: true });
+      handleResponse({ success: true, message: 'Background changed successfully' });
     } else if (request.action === 'restoreBackground') {
       restoreOriginalBackground();
-      sendResponse({ success: true });
+      handleResponse({ success: true, message: 'Background restored successfully' });
     } else if (request.action === 'getBackgroundInfo') {
-      sendResponse({
+      handleResponse({
         success: true,
         hasOriginal: originalBackground !== null,
         currentImage: currentBackgroundImage
       });
     } else {
-      sendResponse({ success: false, error: 'Unknown action' });
+      handleResponse({ success: false, error: 'Unknown action: ' + request.action });
     }
   } catch (error) {
     console.error('Content script error:', error);
-    sendResponse({ success: false, error: (error as Error).message });
+    handleResponse({ success: false, error: (error as Error).message });
   }
   
   return true; // Keep message channel open for async response
@@ -61,12 +76,17 @@ function changePageBackground(imageUrl: string) {
   
   // Store original background if not already stored
   if (originalBackground === null) {
-    originalBackground = window.getComputedStyle(body).background || '';
+    const computedStyle = window.getComputedStyle(body);
+    originalBackground = computedStyle.background || computedStyle.backgroundColor || '';
   }
   
-  // Apply new background
-  body.style.background = `url("${imageUrl}") center center / cover no-repeat fixed`;
+  // Apply new background with better styling
+  body.style.backgroundImage = `url("${imageUrl}")`;
+  body.style.backgroundSize = 'cover';
+  body.style.backgroundPosition = 'center center';
+  body.style.backgroundRepeat = 'no-repeat';
   body.style.backgroundAttachment = 'fixed';
+  
   currentBackgroundImage = imageUrl;
   
   console.log('Background changed to:', imageUrl);
@@ -80,6 +100,14 @@ function restoreOriginalBackground() {
   }
   
   if (originalBackground !== null) {
+    // Clear all background properties first
+    body.style.backgroundImage = '';
+    body.style.backgroundSize = '';
+    body.style.backgroundPosition = '';
+    body.style.backgroundRepeat = '';
+    body.style.backgroundAttachment = '';
+    
+    // Restore original background
     body.style.background = originalBackground;
     currentBackgroundImage = null;
     console.log('Background restored to original');
@@ -88,6 +116,18 @@ function restoreOriginalBackground() {
   }
 }
 
-// Initialize
+// Initialize content script
 init();
 console.log('AI Background Shifter content script loaded');
+
+// Send ready signal to background script
+try {
+  chrome.runtime.sendMessage({ action: 'contentScriptReady' }, (_response) => {
+    // Ignore response, this is just to establish connection
+    if (chrome.runtime.lastError) {
+      console.log('Could not signal ready state:', chrome.runtime.lastError.message);
+    }
+  });
+} catch (error) {
+  console.log('Could not send ready signal:', error);
+}
