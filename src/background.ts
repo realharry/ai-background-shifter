@@ -5,20 +5,53 @@ chrome.action.onClicked.addListener((tab) => {
   }
 });
 
+// Inject content script into tab if needed
+async function ensureContentScript(tabId: number): Promise<void> {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        // Check if our content script is already loaded
+        if (!(window as any).aiBackgroundShifterLoaded) {
+          console.log('Content script not detected, will be injected via manifest');
+        }
+      }
+    });
+  } catch (error) {
+    console.log('Could not check content script status:', error);
+  }
+}
+
 // Handle messages from content script and sidepanel
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'changeBackground' || request.action === 'restoreBackground' || request.action === 'getBackgroundInfo') {
     // Forward message to the active tab's content script
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, request, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error('Error sending message to content script:', chrome.runtime.lastError.message);
-            sendResponse({ success: false, error: chrome.runtime.lastError.message });
-          } else {
-            sendResponse(response);
-          }
-        });
+        const tabId = tabs[0].id;
+        
+        // Ensure content script is available
+        await ensureContentScript(tabId);
+        
+        // Try to send message with retry
+        const sendMessageWithRetry = (attempts: number = 3) => {
+          chrome.tabs.sendMessage(tabId, request, (response) => {
+            if (chrome.runtime.lastError) {
+              console.error(`Attempt ${4 - attempts}: Error sending message to content script:`, chrome.runtime.lastError.message);
+              
+              if (attempts > 1 && chrome.runtime.lastError.message?.includes('Could not establish connection')) {
+                // Retry after a short delay
+                setTimeout(() => sendMessageWithRetry(attempts - 1), 100);
+              } else {
+                sendResponse({ success: false, error: `Connection failed: ${chrome.runtime.lastError.message}. Please refresh the page and try again.` });
+              }
+            } else {
+              sendResponse(response || { success: false, error: 'No response from content script' });
+            }
+          });
+        };
+        
+        sendMessageWithRetry();
       } else {
         sendResponse({ success: false, error: 'No active tab found' });
       }

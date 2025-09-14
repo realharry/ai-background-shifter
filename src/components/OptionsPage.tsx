@@ -17,6 +17,24 @@ const DEFAULT_SETTINGS: Settings = {
   quality: 'standard'
 }
 
+// Mock chrome API for testing
+const mockChrome = {
+  storage: {
+    sync: {
+      get: (keys: any, callback: (result: any) => void) => {
+        console.log('Mock storage get:', keys);
+        setTimeout(() => callback({ settings: DEFAULT_SETTINGS }), 100);
+      },
+      set: (data: any, callback?: () => void) => {
+        console.log('Mock storage set:', data);
+        if (callback) setTimeout(callback, 100);
+      }
+    }
+  }
+};
+
+const chromeAPI = (window as any).chrome || mockChrome;
+
 export function OptionsPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [isSaving, setIsSaving] = useState(false)
@@ -24,18 +42,31 @@ export function OptionsPage() {
 
   useEffect(() => {
     // Load settings from Chrome storage
-    chrome.storage.sync.get(['settings'], (result) => {
-      if (result.settings) {
-        setSettings({ ...DEFAULT_SETTINGS, ...result.settings })
-      }
-    })
+    try {
+      chromeAPI.storage.sync.get(['settings'], (result: any) => {
+        if (result.settings) {
+          setSettings({ ...DEFAULT_SETTINGS, ...result.settings })
+        }
+      })
+    } catch (err) {
+      console.log('Chrome storage not available, using default settings');
+    }
   }, [])
 
   const saveSettings = async () => {
     setIsSaving(true)
     
     try {
-      await chrome.storage.sync.set({ settings })
+      await new Promise<void>((resolve, reject) => {
+        chromeAPI.storage.sync.set({ settings }, () => {
+          if ((window as any).chrome && (window as any).chrome.runtime && (window as any).chrome.runtime.lastError) {
+            reject(new Error((window as any).chrome.runtime.lastError.message));
+          } else {
+            resolve();
+          }
+        });
+      });
+      
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (error) {
@@ -145,12 +176,12 @@ export function OptionsPage() {
               <Button onClick={saveSettings} disabled={isSaving}>
                 {isSaving ? (
                   <>
-                    <Save className="mr-2 h-4 w-4 animate-pulse" />
+                    <Save style={{ marginRight: '8px', height: '16px', width: '16px', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Save className="mr-2 h-4 w-4" />
+                    <Save style={{ marginRight: '8px', height: '16px', width: '16px' }} />
                     Save Settings
                   </>
                 )}

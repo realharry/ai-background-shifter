@@ -8,6 +8,29 @@ interface BackgroundInfo {
   currentImage: string | null;
 }
 
+// Mock chrome API for testing
+const mockChrome = {
+  runtime: {
+    sendMessage: (message: any, callback?: (response: any) => void) => {
+      console.log('Mock sendMessage:', message);
+      if (callback) {
+        setTimeout(() => {
+          if (message.action === 'generateImage') {
+            callback({ success: true, imageUrl: 'https://picsum.photos/800/600?random=' + Date.now() });
+          } else {
+            callback({ success: true });
+          }
+        }, 1000);
+      }
+    },
+    openOptionsPage: () => {
+      console.log('Mock openOptionsPage');
+    }
+  }
+};
+
+const chromeAPI = (window as any).chrome || mockChrome;
+
 export function SidePanel() {
   const [prompt, setPrompt] = useState('')
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
@@ -17,11 +40,15 @@ export function SidePanel() {
 
   useEffect(() => {
     // Get current background info
-    chrome.runtime.sendMessage({ action: 'getBackgroundInfo' }, (response) => {
-      if (response && response.success !== false) {
-        setBackgroundInfo(response)
-      }
-    })
+    try {
+      chromeAPI.runtime.sendMessage({ action: 'getBackgroundInfo' }, (response: any) => {
+        if (response && response.success !== false) {
+          setBackgroundInfo(response)
+        }
+      })
+    } catch (err) {
+      console.log('Chrome runtime not available, using mock data');
+    }
   }, [])
 
   const generateImage = async () => {
@@ -34,19 +61,19 @@ export function SidePanel() {
     setError(null)
 
     try {
-      const response = await chrome.runtime.sendMessage({
+      chromeAPI.runtime.sendMessage({
         action: 'generateImage',
         prompt: prompt.trim()
+      }, (response: any) => {
+        if (response && response.success) {
+          setGeneratedImage(response.imageUrl)
+        } else {
+          setError(response?.error || 'Failed to generate image')
+        }
+        setIsGenerating(false)
       })
-
-      if (response.success) {
-        setGeneratedImage(response.imageUrl)
-      } else {
-        setError(response.error || 'Failed to generate image')
-      }
-    } catch {
+    } catch (err) {
       setError('Failed to generate image')
-    } finally {
       setIsGenerating(false)
     }
   }
@@ -54,27 +81,35 @@ export function SidePanel() {
   const applyBackground = () => {
     if (!generatedImage) return
 
-    chrome.runtime.sendMessage({
-      action: 'changeBackground',
-      imageUrl: generatedImage
-    }, (response) => {
-      if (response && response.success !== false) {
-        setBackgroundInfo(prev => ({ ...prev, currentImage: generatedImage, hasOriginal: true }))
-        setGeneratedImage(null)
-      } else {
-        setError(response?.error || 'Failed to apply background')
-      }
-    })
+    try {
+      chromeAPI.runtime.sendMessage({
+        action: 'changeBackground',
+        imageUrl: generatedImage
+      }, (response: any) => {
+        if (response && response.success !== false) {
+          setBackgroundInfo(prev => ({ ...prev, currentImage: generatedImage, hasOriginal: true }))
+          setGeneratedImage(null)
+        } else {
+          setError(response?.error || 'Failed to apply background')
+        }
+      })
+    } catch (err) {
+      setError('Failed to apply background')
+    }
   }
 
   const restoreBackground = () => {
-    chrome.runtime.sendMessage({ action: 'restoreBackground' }, (response) => {
-      if (response && response.success !== false) {
-        setBackgroundInfo(prev => ({ ...prev, currentImage: null }))
-      } else {
-        setError(response?.error || 'Failed to restore background')
-      }
-    })
+    try {
+      chromeAPI.runtime.sendMessage({ action: 'restoreBackground' }, (response: any) => {
+        if (response && response.success !== false) {
+          setBackgroundInfo(prev => ({ ...prev, currentImage: null }))
+        } else {
+          setError(response?.error || 'Failed to restore background')
+        }
+      })
+    } catch (err) {
+      setError('Failed to restore background')
+    }
   }
 
   const retryGeneration = () => {
@@ -112,7 +147,7 @@ export function SidePanel() {
         >
           {isGenerating ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 style={{ marginRight: '8px', height: '16px', width: '16px', animation: 'spin 1s linear infinite' }} />
               Generating...
             </>
           ) : (
@@ -137,11 +172,11 @@ export function SidePanel() {
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <Button onClick={applyBackground} style={{ flex: '1' }}>
-                <Check className="mr-2 h-4 w-4" />
+                <Check style={{ marginRight: '8px', height: '16px', width: '16px' }} />
                 Apply
               </Button>
               <Button onClick={retryGeneration} variant="outline" style={{ flex: '1' }}>
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw style={{ marginRight: '8px', height: '16px', width: '16px' }} />
                 Retry
               </Button>
             </div>
@@ -152,7 +187,7 @@ export function SidePanel() {
           <div style={{ paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
             <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Current background applied</p>
             <Button onClick={restoreBackground} variant="outline" style={{ width: '100%' }}>
-              <X className="mr-2 h-4 w-4" />
+              <X style={{ marginRight: '8px', height: '16px', width: '16px' }} />
               Restore Original
             </Button>
           </div>
@@ -163,7 +198,7 @@ export function SidePanel() {
         <Button
           variant="ghost"
           style={{ width: '100%', fontSize: '12px' }}
-          onClick={() => chrome.runtime.openOptionsPage()}
+          onClick={() => chromeAPI.runtime.openOptionsPage()}
         >
           Settings
         </Button>
